@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>タイマー＋時計＋カレンダー</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* ===== 共通カラー・スタイル定義 ===== */
+    :root {
+      --primary-color: #007acc;
+      --accent-color: #00c896;
+      --bg-color: #f0f4f8;
+      --font-color: #333;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--font-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 10px;
+      margin: 0;
+    }
+
+    /* ===== タイトル・日付・時計表示 ===== */
+    h1 {
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+
+    .date, .clock {
+      font-size: 1.2em;
+      margin-bottom: 5px;
+    }
+
+    .clock {
+      color: var(--accent-color);
+      font-size: 1.5em;
+      margin-bottom: 30px;
+    }
+
+    /* ===== タイマー表示エリア ===== */
+    .timer-container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 30px;
+    }
+
+    .inputs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input[type="number"] {
+      width: 80px;
+      padding: 10px;
+      font-size: 1.2em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: var(--primary-color);
+      color: white;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: var(--accent-color);
+    }
+
+    #timer {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    /* ===== カレンダー表示エリア ===== */
+    .calendar {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .calendar h2 {
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+
+    .calendar table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .calendar th, .calendar td {
+      width: 14.2%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      font-size: 0.9em;
+    }
+
+    .calendar th {
+      background-color: #e0f0ff;
+    }
+
+    .today {
+      background-color: #00c896;
+      color: white;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <!-- タイトル -->
+  <h1>⏱ タイマーアプリ</h1>
+
+  <!-- 今日の日付と現在時刻 -->
+  <div class="date" id="date">--年--月--日（--）</div>
+  <div class="clock" id="clock">--:--:--</div>
+
+  <!-- タイマー操作エリア -->
+  <div class="timer-container">
+    <div class="inputs">
+      <input type="number" id="minutes" placeholder="分" min="0">
+      <input type="number" id="seconds" placeholder="秒" min="0" max="59">
+    </div>
+
+    <div class="buttons">
+      <button onclick="startTimer()">スタート</button>
+      <button onclick="pauseTimer()">一時停止</button>
+      <button onclick="resetTimer()">リセット</button>
+    </div>
+
+    <div id="timer">00:00</div>
+  </div>
+
+  <!-- カレンダー表示エリア -->
+  <div class="calendar" id="calendar"></div>
+
+  <!-- タイマー終了時のアラーム音 -->
+  <audio id="alarm-sound" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
+
+  <script>
+    // ===== タイマー関連変数 =====
+    let countdown;
+    let remainingSeconds = 0;
+    let isPaused = false;
+
+    // タイマー開始処理
+    function startTimer() {
+      if (isPaused) {
+        isPaused = false;
+        countdown = setInterval(runTimer, 1000);
+        return;
+      }
+
+      clearInterval(countdown);
+      const min = parseInt(document.getElementById("minutes").value) || 0;
+      const sec = parseInt(document.getElementById("seconds").value) || 0;
+      remainingSeconds = min * 60 + sec;
+
+      if (remainingSeconds <= 0) {
+        alert("1秒以上の時間を指定してください");
+        return;
+      }
+
+      updateDisplay(remainingSeconds);
+      countdown = setInterval(runTimer, 1000);
+    }
+
+    // タイマーのカウントダウン処理
+    function runTimer() {
+      if (remainingSeconds <= 0) {
+        clearInterval(countdown);
+        document.getElementById("alarm-sound").play(); // アラーム音再生
+        alert("タイマー終了！");
+        return;
+      }
+      remainingSeconds--;
+      updateDisplay(remainingSeconds);
+    }
+
+    // 一時停止処理
+    function pauseTimer() {
+      clearInterval(countdown);
+      isPaused = true;
+    }
+
+    // リセット処理
+    function resetTimer() {
+      clearInterval(countdown);
+      remainingSeconds = 0;
+      isPaused = false;
+      updateDisplay(0);
+    }
+
+    // タイマー表示更新
+    function updateDisplay(seconds) {
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      document.getElementById("timer").textContent = `${m}:${s}`;
+    }
+
+    // ===== 時計と日付の表示処理 =====
+    function updateClockAndDate() {
+      const now = new Date();
+
+      // 時計表示（HH:MM:SS）
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById("clock").textContent = `${h}:${m}:${s}`;
+
+      // 日付表示（西暦＋曜日）
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const date = now.getDate();
+      const weekday = ['日','月','火','水','木','金','土'][now.getDay()];
+      document.getElementById("date").textContent = `${year}年${month}月${date}日（${weekday}）`;
+    }
+
+    // 毎秒更新
+    setInterval(updateClockAndDate, 1000);
+    updateClockAndDate();
+
+    // ===== カレンダー生成処理 =====
+    function generateCalendar() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const today = now.getDate();
+
+      const firstDay = new Date(year, month, 1).getDay(); // 月初の曜日
+      const lastDate = new Date(year, month + 1, 0).getDate(); // 月末日
+
+      let html = `<h2>${year}年${month + 1}月</h2><table><tr>`;
+      const weekdays = ['日','月','火','水','木','金','土'];
+      weekdays.forEach(day => html += `<th>${day}</th>`);
+      html += `</tr><tr>`;
+
+            // 月初の空白セル（1日が何曜日かに応じて）
+      for (let i = 0; i < firstDay; i++) {
+        html += `<td></td>`;
+      }
+
+      // 日付セルを1日から月末までループして生成
+      for (let d = 1; d <= lastDate; d++) {
+        const currentDay = new Date(year, month, d).getDay(); // 曜日取得
+        const isToday = d === today ? 'today' : ''; // 今日の日付ならハイライト
+        html += `<td class="${isToday}">${d}</td>`;
+
+        // 土曜日の後は改行（次の週へ）
+        if (currentDay === 6 && d !== lastDate) {
+          html += `</tr><tr>`;
+        }
+      }
+
+      // テーブル閉じタグ
+      html += `</tr></table>`;
+
+      // カレンダーHTMLを画面に表示
+      document.getElementById("calendar").innerHTML = html;
+    }
+
+    // ページ読み込み時にカレンダー生成
+    generateCalendar();
+  </script>
+</body>
+</html>
